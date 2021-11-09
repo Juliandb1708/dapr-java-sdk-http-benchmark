@@ -1,20 +1,18 @@
 package http;
 
 import reactor.core.publisher.Mono;
-import reactor.util.context.Context;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public interface DaprHttp extends AutoCloseable {
 
-    Mono<DaprHttp.Response> invokeApi(String method, String[] pathSegments, Map<String, List<String>> urlParameters, Map<String, String> headers);
+    Mono<DaprHttp.Response> invokeApi(String method, String[] pathSegments);
 
-    Mono<DaprHttp.Response> invokeApi(String method, String[] pathSegments, Map<String, List<String>> urlParameters, byte[] content, Map<String, String> headers);
+    Mono<DaprHttp.Response> invokeApi(String method, String[] pathSegments, byte[] content);
 
-    CompletableFuture<Response> doInvokeApi(String method, String[] pathSegments, Map<String, List<String>> urlParameters, byte[] content, Map<String, String> headers);
+    CompletableFuture<Response> doInvokeApi(String method, String[] pathSegments, byte[] content);
 
     class Response {
         private final byte[] body;
