@@ -1,10 +1,14 @@
 package http;
 
+import okhttp3.HttpUrl.Builder;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import reactor.core.publisher.Mono;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class OkHttp implements DaprHttp {
@@ -32,7 +36,40 @@ public class OkHttp implements DaprHttp {
 
     @Override
     public CompletableFuture<Response> doInvokeApi(String method, String[] pathSegments, Map<String, List<String>> urlParameters, byte[] content, Map<String, String> headers) {
-        return null;
+        Builder urlBuilder = new Builder();
+        urlBuilder.scheme("http").host(this.hostname).port(this.port);
+        for(String pathSegment : pathSegments) {
+            urlBuilder.addPathSegment(pathSegment);
+        }
+
+        Optional.ofNullable(urlParameters).orElse(Collections.emptyMap()).forEach((key, value) -> {
+            Optional.ofNullable(value).orElse(Collections.emptyList()).forEach(urlParameterValue -> {
+                urlBuilder.addQueryParameter(key, urlParameterValue);
+            });
+        });
+
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(urlBuilder.build());
+
+        if(HttpMethods.GET.name().equals(method)) {
+            requestBuilder.get();
+        } else {
+            requestBuilder.method(method, null);
+        }
+
+        Optional.of(headers.entrySet()).orElse(Collections.emptySet()).forEach(header -> {
+            requestBuilder.addHeader(header.getKey(), header.getValue());
+        });
+
+        try {
+            Request request = requestBuilder.build();
+            CompletableFuture<Response> future = new CompletableFuture<>();
+            this.okHttpClient.newCall(request).enqueue(new ResponseFutureCallBack(future));
+
+            return future;
+        } finally {
+            this.okHttpClient.dispatcher().executorService().shutdown();
+        }
     }
 
     @Override

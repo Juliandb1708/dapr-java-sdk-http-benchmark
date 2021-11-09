@@ -1,10 +1,19 @@
 package http;
 
+import org.apache.http.client.utils.URIBuilder;
 import reactor.core.publisher.Mono;
 
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class NativeHttp implements DaprHttp {
 
@@ -29,7 +38,51 @@ public class NativeHttp implements DaprHttp {
 
     @Override
     public CompletableFuture<Response> doInvokeApi(String method, String[] pathSegments, Map<String, List<String>> urlParameters, byte[] content, Map<String, String> headers) {
-        return null;
+        URIBuilder urlBuilder = new URIBuilder();
+        urlBuilder.setScheme("http").setHost(this.hostname).setPort(this.port)
+                .setPathSegments(pathSegments);
+
+        Optional.ofNullable(urlParameters).orElse(Collections.emptyMap()).forEach((key, value) -> {
+            Optional.ofNullable(value).orElse(Collections.emptyList()).forEach(urlParameterValue -> {
+                urlBuilder.addParameter(key, urlParameterValue);
+            });
+        });
+
+        HttpRequest.Builder requestBuilder;
+        try {
+            requestBuilder = HttpRequest.newBuilder()
+                    .uri(urlBuilder.build());
+        } catch(URISyntaxException e) {
+            return null;
+        }
+
+        if(HttpMethods.GET.name().equals(method)) {
+            requestBuilder.GET();
+        } else {
+            requestBuilder.method(method, null);
+        }
+
+        Optional.of(headers.entrySet()).orElse(Collections.emptySet()).forEach(header -> {
+            requestBuilder.setHeader(header.getKey(), header.getValue());
+        });
+
+        ExecutorService service = null;
+        try {
+            service = Executors.newSingleThreadExecutor();
+
+            HttpRequest request = requestBuilder.build();
+            CompletableFuture<Response> future = new CompletableFuture<>();
+
+            HttpClient.newBuilder()
+                    .executor(service)
+                    .build()
+                    .sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
+                    .thenAccept(new ResponseConsumer(future));
+
+            return future;
+        } finally {
+            if(service != null) service.shutdown();
+        }
     }
 
     @Override
