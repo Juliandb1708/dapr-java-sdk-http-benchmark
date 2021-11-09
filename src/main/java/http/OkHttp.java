@@ -1,5 +1,6 @@
 package http;
 
+import http.responsehandlers.ResponseFutureCallBack;
 import okhttp3.HttpUrl.Builder;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -57,9 +58,11 @@ public class OkHttp implements DaprHttp {
             requestBuilder.method(method, null);
         }
 
-        Optional.of(headers.entrySet()).orElse(Collections.emptySet()).forEach(header -> {
-            requestBuilder.addHeader(header.getKey(), header.getValue());
-        });
+        if(headers != null) {
+            Optional.of(headers.entrySet()).orElse(Collections.emptySet()).forEach(header -> {
+                requestBuilder.addHeader(header.getKey(), header.getValue());
+            });
+        }
 
         try {
             Request request = requestBuilder.build();

@@ -1,5 +1,6 @@
 package http;
 
+import http.responsehandlers.ResponseConsumer;
 import org.apache.http.client.utils.URIBuilder;
 import reactor.core.publisher.Mono;
 
@@ -62,9 +63,11 @@ public class NativeHttp implements DaprHttp {
             requestBuilder.method(method, null);
         }
 
-        Optional.of(headers.entrySet()).orElse(Collections.emptySet()).forEach(header -> {
-            requestBuilder.setHeader(header.getKey(), header.getValue());
-        });
+        if(headers != null) {
+            Optional.of(headers.entrySet()).orElse(Collections.emptySet()).forEach(header -> {
+                requestBuilder.setHeader(header.getKey(), header.getValue());
+            });
+        }
 
         ExecutorService service = null;
         try {
@@ -77,7 +80,8 @@ public class NativeHttp implements DaprHttp {
                     .executor(service)
                     .build()
                     .sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
-                    .thenAccept(new ResponseConsumer(future));
+                    .thenAccept(new ResponseConsumer(future))
+                    .join();
 
             return future;
         } finally {

@@ -1,4 +1,6 @@
-package http;
+package http.responsehandlers;
+
+import http.DaprHttp;
 
 import java.net.http.HttpResponse;
 import java.util.Collections;

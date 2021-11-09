@@ -2,6 +2,7 @@ package benchmark;
 
 import http.DaprHttp;
 import http.NativeHttp;
+import http.OkHttp;
 import reactor.core.publisher.Mono;
 
 public class DaprClientHttp {
@@ -11,7 +12,7 @@ public class DaprClientHttp {
     public Mono<String> invokeMethod() {
         String[] pathSegments = new String[]{"employees.json"};
 
-        Mono<DaprHttp.Response> response = daprHttp.invokeApi("GET", pathSegments, null, null, null);
+        Mono<DaprHttp.Response> response = daprHttp.invokeApi("GET", pathSegments, null, null);
 
         return response.flatMap(DaprClientHttp::getMono);
     }
