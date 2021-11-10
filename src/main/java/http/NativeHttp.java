@@ -1,28 +1,42 @@
 package http;
 
 import http.responsehandlers.ResponseConsumer;
+import http.responsehandlers.ResponseFunction;
 import org.apache.http.client.utils.URIBuilder;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class NativeHttp implements DaprHttp {
 
+    private final HttpClient httpClient;
     private final ExecutorService executorService;
     private final String hostname;
     private final int port;
 
     public NativeHttp(String hostname, int port) {
-        this.executorService = Executors.newFixedThreadPool(5);
+        this.executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60, TimeUnit.SECONDS,
+                new SynchronousQueue(), threadFactory("$okHttpName Dispatcher", false));
+
+        this.httpClient = HttpClient.newBuilder()
+                .executor(executorService)
+                .build();
 
         this.hostname = hostname;
         this.port = port;
+    }
+
+    private ThreadFactory threadFactory(String name, boolean daemon) {
+        return r -> {
+            Thread t = new Thread(r, name);
+            t.setDaemon(daemon);
+            return t;
+        };
     }
 
     @Override
@@ -38,14 +52,14 @@ public class NativeHttp implements DaprHttp {
 
     @Override
     public CompletableFuture<Response> doInvokeApi(String method, String[] pathSegments, byte[] content) {
-        URIBuilder urlBuilder = new URIBuilder();
-        urlBuilder.setScheme("http").setHost(this.hostname).setPort(this.port)
-                .setPathSegments(pathSegments);
+//        URIBuilder urlBuilder = new URIBuilder();
+//        urlBuilder.setScheme("http").setHost(this.hostname).setPort(this.port)
+//                .setPathSegments(pathSegments);
 
         HttpRequest.Builder requestBuilder;
         try {
             requestBuilder = HttpRequest.newBuilder()
-                    .uri(urlBuilder.build());
+                    .uri(new URI("http://localhost:4005/employee.json"));
         } catch(URISyntaxException e) {
             return null;
         }
@@ -57,16 +71,10 @@ public class NativeHttp implements DaprHttp {
         }
 
         HttpRequest request = requestBuilder.build();
-        CompletableFuture<Response> future = new CompletableFuture<>();
 
-        HttpClient.newBuilder()
-                .executor(executorService)
-                .build()
+        return this.httpClient
                 .sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
-                .thenAccept(new ResponseConsumer(future))
-                .join();
-
-        return future;
+                .thenApply(new ResponseFunction());
     }
 
     @Override
