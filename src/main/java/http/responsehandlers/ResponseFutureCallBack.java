@@ -9,20 +9,14 @@ import okhttp3.ResponseBody;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class ResponseFutureCallBack implements Callback {
 
-    public static final byte[] EMPTY_BYTES;
-
+    public static final byte[] EMPTY_BYTES = new byte[0];
     private final CompletableFuture<DaprHttp.Response> future;
-
-    static {
-        EMPTY_BYTES = new byte[0];
-    }
 
     public ResponseFutureCallBack(CompletableFuture<DaprHttp.Response> future) {
         this.future = future;
@@ -36,7 +30,7 @@ public class ResponseFutureCallBack implements Callback {
     @Override
     public void onResponse(@NotNull Call call, @NotNull Response response) {
         if(!response.isSuccessful()) {
-            this.future.completeExceptionally(new DaprException("HTTP Status code: " + response.code()));
+            this.future.completeExceptionally(new DaprException(response.code(), "HTTP Status code: " + response.code()));
         } else {
             Map<String, String> mapHeaders = new HashMap<>();
             byte[] result = getBodyBytesOrEmptyArray(response);

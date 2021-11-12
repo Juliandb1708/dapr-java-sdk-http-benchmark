@@ -1,10 +1,7 @@
 package http;
 
 import http.exceptions.DaprException;
-import http.responsehandlers.ResponseBiConsumer;
 import http.responsehandlers.ResponseBiFunction;
-import http.responsehandlers.ResponseConsumer;
-import http.responsehandlers.ResponseFunction;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -12,23 +9,28 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.concurrent.*;
+import java.util.function.BiFunction;
 
 public class NativeHttp implements DaprHttp {
 
+    private final BiFunction<HttpResponse<byte[]>, Throwable, DaprHttp.Response> responseFunction;
+
     private final HttpClient httpClient;
     private final ExecutorService executorService;
+
     private final String hostname;
     private final int port;
 
     public NativeHttp(String hostname, int port) {
         this.executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), threadFactory("$okHttpName Dispatcher", false));
+                new SynchronousQueue<>(), threadFactory());
 
         this.httpClient = HttpClient.newBuilder()
                 .executor(executorService)
                 .build();
+
+        this.responseFunction = new ResponseBiFunction();
 
         this.hostname = hostname;
         this.port = port;
@@ -54,7 +56,7 @@ public class NativeHttp implements DaprHttp {
             requestBuilder = HttpRequest.newBuilder()
                     .uri(new URI("http://" + this.hostname + ":" + this.port + "/" + segments));
         } catch(URISyntaxException e) {
-            throw new DaprException(e.getReason());
+            throw new DaprException(e);
         }
 
         if(HttpMethods.GET.name().equals(method)) {
@@ -63,28 +65,11 @@ public class NativeHttp implements DaprHttp {
             requestBuilder.method(method, null);
         }
 
-        HttpRequest request = requestBuilder
-                .build();
+        HttpRequest request = requestBuilder.build();
 
-//        var future = new CompletableFuture<Response>();
-//        this.httpClient
-//                .sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
-//                .thenAccept(new ResponseConsumer(future));
-//        return future;
-
-//        return this.httpClient
-//                .sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
-//                .thenApply(new ResponseFunction());
-
-        var future = new CompletableFuture<Response>();
-        this.httpClient
+        return this.httpClient
                 .sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
-                .whenComplete(new ResponseBiConsumer(future));
-        return future;
-
-//        return this.httpClient
-//                .sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
-//                .handle(new ResponseBiFunction());
+                .handle(this.responseFunction);
     }
 
     @Override
@@ -92,10 +77,10 @@ public class NativeHttp implements DaprHttp {
         executorService.shutdown();
     }
 
-    private ThreadFactory threadFactory(String name, boolean daemon) {
+    private ThreadFactory threadFactory() {
         return r -> {
-            Thread t = new Thread(r, name);
-            t.setDaemon(daemon);
+            Thread t = new Thread(r, "$okHttpName Dispatcher");
+            t.setDaemon(false);
             return t;
         };
     }

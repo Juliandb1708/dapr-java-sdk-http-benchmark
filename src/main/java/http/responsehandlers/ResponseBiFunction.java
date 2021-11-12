@@ -4,10 +4,8 @@ import http.DaprHttp;
 import http.exceptions.DaprException;
 
 import java.net.http.HttpResponse;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiFunction;
 
 public class ResponseBiFunction implements BiFunction<HttpResponse<byte[]>, Throwable, DaprHttp.Response> {
@@ -15,18 +13,18 @@ public class ResponseBiFunction implements BiFunction<HttpResponse<byte[]>, Thro
     @Override
     public DaprHttp.Response apply(HttpResponse<byte[]> response, Throwable throwable) {
         if(throwable != null) {
-            throw new DaprException("HTTP Status code: UNKNOWN");
+            throw new DaprException(throwable);
         }
 
-        if(response.statusCode() / 100 != 2) {
-            throw new DaprException("HTTP Status code: " + response.statusCode());
+        if(response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new DaprException(response.statusCode(), "HTTP Status code: " + response.statusCode());
         } else {
             Map<String, String> mapHeaders = new HashMap<>();
             byte[] result = response.body();
             response.headers().map().forEach((key, value) -> {
-                Optional.ofNullable(value).orElse(Collections.emptyList()).forEach(urlParameterValue -> {
-                    mapHeaders.put(key, urlParameterValue);
-                });
+                if (value != null) {
+                    mapHeaders.put(key, String.join(",", value));
+                }
             });
 
             return new DaprHttp.Response(result, mapHeaders, response.statusCode());
