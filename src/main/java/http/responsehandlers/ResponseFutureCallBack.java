@@ -1,6 +1,7 @@
 package http.responsehandlers;
 
 import http.DaprHttp;
+import http.exceptions.DaprException;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -8,6 +9,7 @@ import okhttp3.ResponseBody;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -34,7 +36,7 @@ public class ResponseFutureCallBack implements Callback {
     @Override
     public void onResponse(@NotNull Call call, @NotNull Response response) {
         if(!response.isSuccessful()) {
-            this.future.completeExceptionally(new Exception("STATUS CODE " + response.code()));
+            this.future.completeExceptionally(new DaprException("HTTP Status code: " + response.code()));
         } else {
             Map<String, String> mapHeaders = new HashMap<>();
             byte[] result = getBodyBytesOrEmptyArray(response);

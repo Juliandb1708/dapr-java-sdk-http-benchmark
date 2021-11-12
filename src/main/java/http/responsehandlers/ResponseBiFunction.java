@@ -8,21 +8,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import java.util.function.BiFunction;
 
-public class ResponseConsumer implements Consumer<HttpResponse<byte[]>> {
-
-    CompletableFuture<DaprHttp.Response> future;
-
-    public ResponseConsumer(CompletableFuture<DaprHttp.Response> future) {
-        this.future = future;
-    }
+public class ResponseBiFunction implements BiFunction<HttpResponse<byte[]>, Throwable, DaprHttp.Response> {
 
     @Override
-    public void accept(HttpResponse<byte[]> response) {
+    public DaprHttp.Response apply(HttpResponse<byte[]> response, Throwable throwable) {
+        if(throwable != null) {
+            throw new DaprException("HTTP Status code: UNKNOWN");
+        }
+
         if(response.statusCode() / 100 != 2) {
-            this.future.completeExceptionally(new DaprException("HTTP Status code: " + response.statusCode()));
+            throw new DaprException("HTTP Status code: " + response.statusCode());
         } else {
             Map<String, String> mapHeaders = new HashMap<>();
             byte[] result = response.body();
@@ -32,7 +29,7 @@ public class ResponseConsumer implements Consumer<HttpResponse<byte[]>> {
                 });
             });
 
-            this.future.complete(new DaprHttp.Response(result, mapHeaders, response.statusCode()));
+            return new DaprHttp.Response(result, mapHeaders, response.statusCode());
         }
     }
 }

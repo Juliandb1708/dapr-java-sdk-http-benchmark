@@ -1,3 +1,3 @@
-docker rm workbench-nginx -f
+docker rm benchmark-nginx -f
 
-docker image rm workbench-nginx:1.0 -f
+docker image rm benchmark-nginx:1.0 -f

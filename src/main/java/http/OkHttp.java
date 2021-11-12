@@ -1,7 +1,6 @@
 package http;
 
 import http.responsehandlers.ResponseFutureCallBack;
-import okhttp3.Dispatcher;
 import okhttp3.HttpUrl.Builder;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

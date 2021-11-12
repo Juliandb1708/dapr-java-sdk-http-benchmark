@@ -9,18 +9,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
-public class ResponseConsumer implements Consumer<HttpResponse<byte[]>> {
+public class ResponseBiConsumer implements BiConsumer<HttpResponse<byte[]>, Throwable> {
 
     CompletableFuture<DaprHttp.Response> future;
 
-    public ResponseConsumer(CompletableFuture<DaprHttp.Response> future) {
+    public ResponseBiConsumer(CompletableFuture<DaprHttp.Response> future) {
         this.future = future;
     }
 
     @Override
-    public void accept(HttpResponse<byte[]> response) {
+    public void accept(HttpResponse<byte[]> response, Throwable throwable) {
+        if(throwable != null) {
+            this.future.completeExceptionally(throwable);
+        }
+
         if(response.statusCode() / 100 != 2) {
             this.future.completeExceptionally(new DaprException("HTTP Status code: " + response.statusCode()));
         } else {
