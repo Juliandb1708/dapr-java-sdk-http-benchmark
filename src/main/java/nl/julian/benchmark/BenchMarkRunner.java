@@ -1,4 +1,4 @@
-package benchmark;
+package nl.julian.benchmark;
 
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;

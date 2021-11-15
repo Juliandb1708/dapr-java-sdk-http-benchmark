@@ -1,7 +1,7 @@
-package http.responsehandlers;
+package nl.julian.http.responsehandlers;
 
-import http.DaprHttp;
-import http.exceptions.DaprException;
+import nl.julian.http.DaprHttp;
+import nl.julian.http.exceptions.DaprException;
 
 import java.net.http.HttpResponse;
 import java.util.HashMap;

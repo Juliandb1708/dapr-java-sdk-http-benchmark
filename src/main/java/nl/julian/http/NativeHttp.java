@@ -1,7 +1,7 @@
-package http;
+package nl.julian.http;
 
-import http.exceptions.DaprException;
-import http.responsehandlers.ResponseBiFunction;
+import nl.julian.http.exceptions.DaprException;
+import nl.julian.http.responsehandlers.ResponseBiFunction;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;

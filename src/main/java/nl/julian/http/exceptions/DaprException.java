@@ -1,4 +1,4 @@
-package http.exceptions;
+package nl.julian.http.exceptions;
 
 public class DaprException extends RuntimeException {
 

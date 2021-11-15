@@ -1,8 +1,8 @@
-package benchmark;
+package nl.julian.benchmark;
 
-import http.DaprHttp;
-import http.NativeHttp;
-import http.OkHttp;
+import nl.julian.http.DaprHttp;
+import nl.julian.http.NativeHttp;
+import nl.julian.http.OkHttp;
 import org.openjdk.jmh.annotations.*;
 
 import java.io.FileInputStream;

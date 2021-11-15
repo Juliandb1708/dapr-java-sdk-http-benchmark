@@ -1,4 +1,4 @@
-package http;
+package nl.julian.http;
 
 public enum HttpMethods {
     GET;

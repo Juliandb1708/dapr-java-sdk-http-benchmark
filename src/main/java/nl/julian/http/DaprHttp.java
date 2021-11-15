@@ -1,4 +1,4 @@
-package http;
+package nl.julian.http;
 
 import reactor.core.publisher.Mono;
 
