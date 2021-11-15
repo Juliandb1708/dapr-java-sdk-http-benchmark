@@ -8,7 +8,18 @@ Both HTTP clients send their requests to an Nginx webserver that serves a static
 
 All measurements will be shown in milliseconds per operation (ms/op). Keep in mind that the results of the benchmarks depend on the environment you run the benchmarks in. That's why ApacheBench is also provided in this repository, to get a baseline measurement before running the JMH benchmark.
 
-# How to run
+# How to run 
+
+## Prerequisites
+
+Make sure you have the following prerequisites installed on your machine.
+
+- Docker for Desktop
+- Java 11 or above
+- Apache Maven 3.6.3 or above
+
+## Instructions
+
 In order to run everything in the right way and get good measurements, you can follow the following steps:
 
 ### 1. Run the Nginx webserver in a Docker container
